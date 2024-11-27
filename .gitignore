@@ -36,3 +36,8 @@ UIST22/study/
 #AUTHOR: Harry
 
 .uitb-mm-venv
+
+mm_testing/dataset/
+
+*.pth
+*.png
