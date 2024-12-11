@@ -1,56 +1,76 @@
 import sys
 import os
+import argparse
 import numpy as np
+
+from stable_baselines3 import PPO
 
 from uitb import Simulator
 
-
-# create folder structure
-save_path = 'mm_testing/dataset/'
-
-if not os.path.isdir(save_path):
-    os.makedirs(save_path)
-
-
-# build pointing simulator
-config_file = 'uitb/configs/mobl_arms_index_pointing.yaml'
-simulator_folder = Simulator.build(config_file)
-
-simulator = Simulator.get(simulator_folder=simulator_folder)
-
-simulator.reset()
-
-n_steps = 64000
-
-# datasets
-vision_frames = np.zeros((n_steps, 80, 120))
-proprioception_frames = np.zeros((n_steps, 44))
-
-for i in range(n_steps):
-    if(i % (n_steps//10) == 0):
-        print('#', end='', flush=True)
-
-    # take random action
-    simulator.step(simulator.action_space.sample())
-
-    # get modality observations
-    obs_dict = simulator.get_observation()
-    vision_obs = obs_dict['vision'][0]
-    proprioception_obs = obs_dict['proprioception']
-
-    # test
-    print(vision_obs)
-    quit()
-
-    # saving modality observations
-    vision_frames[i] = vision_obs
-    proprioception_frames[i] = proprioception_obs
+if __name__ == "__main__":
+    # parsing
+    parser = argparse.ArgumentParser(description="Collecting Observations")
+    parser.add_argument("--num_episodes", type=int, default=100, help="Average steps per episode = 130")
+    
+    args = parser.parse_args()
 
 
-#clean up simulator
-print('\n')
-simulator.close()
+    # create folder structure
+    save_path = 'mm_testing/dataset/'
 
-# saving
-np.save(save_path + 'vision_frames', vision_frames)
-np.save(save_path + 'proprioception_frames', proprioception_frames)
+    if not os.path.isdir(save_path):
+        os.makedirs(save_path)
+
+
+    # build pointing simulator
+    config_file = 'uitb/configs/mobl_arms_index_pointing.yaml'
+    simulator_folder = Simulator.build(config_file)
+
+    simulator = Simulator.get(simulator_folder=simulator_folder)
+
+    simulator.reset()
+
+    # loading saved policy - must ensure training has taken place
+    # model_path = 'simulators/mobl_arms_index_pointing_original/checkpoints/model_95000000_steps.zip' # from Aleksi repo
+    model_path = 'simulators/mobl_arms_index_pointing/checkpoints/model_100000000_steps.zip' # reproduced
+
+    print(f"Loading model: {model_path}")
+    model = PPO.load(model_path)
+
+    # datasets
+    vision_frames = []
+    proprioception_frames = []
+
+    # save observations on trained policy
+    num_episodes = args.num_episodes
+    steps = 0
+
+    for episode_indx in range(num_episodes):
+        print(f"Episode: {episode_indx+1} / {num_episodes}")
+
+        # reset environment
+        obs, _ = simulator.reset()
+        terminated = False
+        truncated = False
+        reward = 0
+
+        # loop until episode end
+        while not terminated and not truncated:
+            steps += 1
+
+            action, _ = model.predict(obs, deterministic=False)
+
+            obs, _, terminated, truncated, _ = simulator.step(action)
+
+            # record and save observations
+            vision_frames.append(obs['vision'][0])
+            proprioception_frames.append(obs['proprioception'])
+
+
+    #clean up simulator
+    print(f'\nNumber of Steps: {steps}\n')
+    simulator.close()
+
+    # saving
+    np.save(save_path + 'vision_frames', vision_frames)
+    np.save(save_path + 'proprioception_frames', proprioception_frames)

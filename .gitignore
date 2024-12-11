@@ -41,3 +41,5 @@ mm_testing/dataset/
 
 *.pth
 *.png
+
+nohup.out
