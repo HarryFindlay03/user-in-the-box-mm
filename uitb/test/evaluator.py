@@ -88,7 +88,9 @@ if __name__ == "__main__":
     run_params["action_sample_freq"] = args.action_sample_freq
     run_params["evaluate"] = True
 
-    run_params["unity_record_gameplay"] = args.record  #False
+    # run_params["unity_record_gameplay"] = args.record  #False
+    run_params["unity_record_gameplay"] = False # AUTHOR: Harry 11.12.2024
+
     run_params["unity_logging"] = True
     run_params["unity_output_folder"] = evaluate_dir
     if args.app_condition is not None:

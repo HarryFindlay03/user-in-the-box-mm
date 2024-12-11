@@ -384,7 +384,12 @@ class Simulator(gym.Env):
     self._render_stack = []  #only used if render_mode == "rgb_array_list"
     self._render_stack_perception = defaultdict(list)  #only used if render_mode == "rgb_array_list" and self._render_mode_perception == "separate"
     self._render_stack_pop = True  #If True, clear the render stack after .render() is called.
-    self._render_stack_clean_at_reset = True  #If True, clear the render stack when .reset() is called.
+
+    # AUTHOR: Harry
+    # self._render_stack_clean_at_reset = True  #If True, clear the render stack when .reset() is called.
+    self._render_stack_clean_at_reset = False
+
+
     self._render_show_depths = render_show_depths  #If True, depth images of visual perception modules are included in GUI rendering.
     self._render_screen_size = None  #only used if render_mode == "human"
     self._render_window = None  #only used if render_mode == "human"
@@ -619,7 +624,7 @@ class Simulator(gym.Env):
       if self._render_stack_clean_at_reset:
         self._render_stack = []
         self._render_stack_perception = defaultdict(list)
-      self._render_stack.append(self._GUI_rendering())
+      self._render_stack.append(self._GUI_rendering()) # Note (Harry) - this is only appending for 10 episodes ... ?
     elif self._render_mode == "human":
       self._GUI_rendering_pygame()
 
